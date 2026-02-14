@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Will you be my Valentine?</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a0a0f 0%, #2d1b2e 50%, #1a0a0f 100%);
+      color: #fff;
+      padding: 1rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card {
+      background: linear-gradient(145deg, #3d2438 0%, #2a1a28 100%);
+      border-radius: 1.25rem;
+      padding: 2rem;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,182,193,0.1);
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.4rem, 4vw, 1.75rem);
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .subtext {
+      text-align: center;
+      color: rgba(255,255,255,0.75);
+      font-size: 0.95rem;
+      margin-bottom: 1.75rem;
+    }
+    .arena {
+      position: relative;
+      min-height: 180px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 12px;
+      border: 2px dashed rgba(255,182,193,0.3);
+      overflow: hidden;
+    }
+    .arena .hearts-container {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .arena .hearts-container .heart {
+      position: absolute;
+      font-size: 1.25rem;
+      animation: float-up 2.5s ease-out forwards;
+      opacity: 0.9;
+    }
+    @keyframes float-up {
+      0% {
+        transform: translateY(0) scale(0.8);
+        opacity: 0.9;
+      }
+      100% {
+        transform: translateY(-120px) scale(1.2);
+        opacity: 0;
+      }
+    }
+    .buttons-wrap {
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      align-items: center;
+      min-height: 160px;
+      padding: 1rem;
+    }
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-yes {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, #e91e63, #c2185b);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(233,30,99,0.4);
+    }
+    .btn-yes:hover { box-shadow: 0 6px 20px rgba(233,30,99,0.5); }
+    .btn-no {
+      position: absolute;
+      z-index: 2;
+      background: linear-gradient(135deg, #555, #333);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .btn-no.yes-mode {
+      background: linear-gradient(135deg, #2e7d32, #1b5e20);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(46,125,50,0.4);
+      cursor: pointer;
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal {
+      background: linear-gradient(145deg, #3d2438, #2a1a28);
+      border-radius: 1rem;
+      padding: 2rem;
+      max-width: 320px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.open .modal { transform: scale(1); }
+    .modal h2 { margin: 0 0 1rem; font-size: 1.35rem; }
+    .modal p { margin: 0; color: rgba(255,255,255,0.9); line-height: 1.5; }
+    .modal-actions { margin-top: 1.25rem; }
+    .modal-actions a,
+    .modal-actions .btn-close {
+      display: inline-block;
+      padding: 0.6rem 1.25rem;
+      border-radius: 999px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(135deg, #e91e63, #c2185b);
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .modal-actions a:hover { opacity: 0.95; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="headline">Will you be my Valentine? 💘</h1>
+    <p class="subtext" id="subtext">I'm asking you officially, on the internet. — Chase</p>
+    <div class="arena">
+      <div class="hearts-container" id="heartsContainer"></div>
+      <div class="buttons-wrap" id="arena">
+        <button type="button" class="btn btn-yes" id="btnYes">Yes 💖</button>
+        <button type="button" class="btn btn-no" id="btnNo">No 🙃</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2>Correct answer. ✅</h2>
+      <p id="modalMessage">Now you're stuck with me. Happy Valentine's Day 💘</p>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // ——— Customize these ———
+      var herName = '';                    // e.g. 'Sarah' → "Sarah, will you be my Valentine? 💘"
+      var fromName = 'Chase';              // subtext ends with "— {fromName}"
+      var afterYesMessage = "Now you're stuck with me. Happy Valentine's Day 💘";
+      var redirectUrlAfterYes = '';        // if set, modal shows "Go to your surprise 💝" link (new tab); else "Close" button
+      // ——————————————————————————
+
+      var NO_TEXTS = [
+        'No 🙃',
+        'Maybe later? 😏',
+        'Nope! 😄',
+        'Try again! 🏃',
+        'Almost... not! 😜',
+        'Okay fine... 💚'
+      ];
+      var DODGES_UNTIL_YES = 6;
+
+      var arena = document.getElementById('arena');
+      var btnYes = document.getElementById('btnYes');
+      var btnNo = document.getElementById('btnNo');
+      var heartsContainer = document.getElementById('heartsContainer');
+      var modalOverlay = document.getElementById('modalOverlay');
+      var headlineEl = document.getElementById('headline');
+      var subtextEl = document.getElementById('subtext');
+      var modalMessageEl = document.getElementById('modalMessage');
+      var modalActionsEl = document.getElementById('modalActions');
+
+      var dodgeCount = 0;
+      var noIsYes = false;
+
+      function getArenaBounds() {
+        var rect = arena.getBoundingClientRect();
+        var style = getComputedStyle(arena);
+        var padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) || 0;
+        var padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) || 0;
+        return {
+          left: 0,
+          top: 0,
+          width: rect.width - padX,
+          height: rect.height - padY
+        };
+      }
+
+      function randomPosition() {
+        var bounds = getArenaBounds();
+        var btnRect = btnNo.getBoundingClientRect();
+        var w = btnRect.width;
+        var h = btnRect.height;
+        var maxX = Math.max(0, bounds.width - w);
+        var maxY = Math.max(0, bounds.height - h);
+        return {
+          left: Math.random() * maxX,
+          top: Math.random() * maxY
+        };
+      }
+
+      function moveNoButton() {
+        if (noIsYes) return;
+        var pos = randomPosition();
+        btnNo.style.left = pos.left + 'px';
+        btnNo.style.top = pos.top + 'px';
+
+        dodgeCount++;
+        if (dodgeCount <= NO_TEXTS.length) {
+          btnNo.textContent = NO_TEXTS[dodgeCount - 1];
+        }
+        if (dodgeCount >= DODGES_UNTIL_YES) {
+          noIsYes = true;
+          btnNo.textContent = 'Yes 💖';
+          btnNo.classList.add('yes-mode');
+          btnNo.style.position = 'relative';
+          btnNo.style.left = '';
+          btnNo.style.top = '';
+        }
+      }
+
+      function spawnHearts() {
+        var bounds = arena.getBoundingClientRect();
+        var containerRect = heartsContainer.getBoundingClientRect();
+        for (var i = 0; i < 18; i++) {
+          (function (i) {
+            setTimeout(function () {
+              var heart = document.createElement('span');
+              heart.className = 'heart';
+              heart.textContent = ['💖', '💘', '❤️', '💕'][i % 4];
+              var x = (Math.random() * 0.8 + 0.1) * containerRect.width;
+              heart.style.left = x + 'px';
+              heart.style.top = containerRect.height + 10 + 'px';
+              heartsContainer.appendChild(heart);
+              setTimeout(function () { heart.remove(); }, 2600);
+            }, i * 80);
+          })(i);
+        }
+      }
+
+      function openModal() {
+        spawnHearts();
+        modalOverlay.classList.add('open');
+      }
+
+      function closeModal(e) {
+        if (e.target === modalOverlay) modalOverlay.classList.remove('open');
+      }
+
+      function onYes() {
+        openModal();
+      }
+
+      btnYes.addEventListener('click', onYes);
+
+      btnNo.addEventListener('click', function (e) {
+        if (noIsYes) {
+          e.preventDefault();
+          onYes();
+          return;
+        }
+        e.preventDefault();
+        moveNoButton();
+      });
+
+      btnNo.addEventListener('mouseenter', function () {
+        if (!noIsYes) moveNoButton();
+      });
+
+      btnNo.addEventListener('touchstart', function (e) {
+        if (noIsYes) return;
+        e.preventDefault();
+        moveNoButton();
+      }, { passive: false });
+
+      modalOverlay.addEventListener('click', closeModal);
+
+      // Apply customization: headline, subtext, modal message, modal button
+      headlineEl.textContent = herName
+        ? herName + ', will you be my Valentine? 💘'
+        : 'Will you be my Valentine? 💘';
+      subtextEl.textContent = "I'm asking you officially, on the internet. — " + fromName;
+      modalMessageEl.textContent = afterYesMessage;
+      if (redirectUrlAfterYes) {
+        var link = document.createElement('a');
+        link.href = redirectUrlAfterYes;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Go to your surprise 💝';
+        link.addEventListener('click', function () { modalOverlay.classList.remove('open'); });
+        modalActionsEl.appendChild(link);
+      } else {
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close';
+        closeBtn.textContent = 'Close';
+        closeBtn.addEventListener('click', function () { modalOverlay.classList.remove('open'); });
+        modalActionsEl.appendChild(closeBtn);
+      }
+
+      // Initial position for No button inside arena
+      function placeNoInArena() {
+        if (noIsYes) return;
+        var pos = randomPosition();
+        btnNo.style.left = pos.left + 'px';
+        btnNo.style.top = pos.top + 'px';
+      }
+      placeNoInArena();
+      window.addEventListener('resize', placeNoInArena);
+    })();
+  </script>
+</body>
+</html>
