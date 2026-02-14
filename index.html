@@ -82,6 +82,11 @@
     .btn-no.dodging {
       position: fixed;
     }
+    .btn-no.yes-mode {
+      background: linear-gradient(135deg, #f0a8c0, #e890b0);
+      box-shadow: 0 4px 14px rgba(230, 130, 160, 0.35);
+    }
+    .btn-no.yes-mode:hover { box-shadow: 0 6px 18px rgba(230, 130, 160, 0.45); }
     .hearts-overlay {
       position: fixed;
       inset: 0;
@@ -177,6 +182,9 @@
       var modalClose = document.getElementById('modalClose');
 
       var isDodging = false;
+      var noIsYes = false;
+      var dodgeCount = 0;
+      var DODGES_UNTIL_YES = 10;
 
       function getScreenBounds() {
         return {
@@ -199,6 +207,18 @@
       }
 
       function moveNoButton() {
+        if (noIsYes) return;
+        dodgeCount++;
+        if (dodgeCount >= DODGES_UNTIL_YES) {
+          noIsYes = true;
+          isDodging = false;
+          btnNo.classList.remove('dodging');
+          btnNo.classList.add('yes-mode');
+          btnNo.textContent = 'Yes 💖';
+          btnNo.style.left = '';
+          btnNo.style.top = '';
+          return;
+        }
         if (!isDodging) {
           isDodging = true;
           btnNo.classList.add('dodging');
@@ -211,17 +231,17 @@
       function spawnHearts() {
         var w = window.innerWidth;
         var h = window.innerHeight;
-        for (var i = 0; i < 20; i++) {
+        for (var i = 0; i < 50; i++) {
           (function (j) {
             setTimeout(function () {
               var heart = document.createElement('span');
               heart.className = 'heart';
               heart.textContent = ['💖', '💘', '❤️', '💕'][j % 4];
-              heart.style.left = (Math.random() * (w - 40) + 20) + 'px';
-              heart.style.top = (h + 20) + 'px';
+              heart.style.left = Math.random() * Math.max(0, w - 30) + 'px';
+              heart.style.top = Math.random() * (h + 50) + 'px';
               heartsOverlay.appendChild(heart);
               setTimeout(function () { heart.remove(); }, 2600);
-            }, j * 70);
+            }, j * 50);
           })(i);
         }
       }
@@ -248,20 +268,25 @@
 
       btnNo.addEventListener('click', function (e) {
         e.preventDefault();
+        if (noIsYes) {
+          onYes();
+          return;
+        }
         moveNoButton();
       });
 
       btnNo.addEventListener('mouseenter', function () {
-        moveNoButton();
+        if (!noIsYes) moveNoButton();
       });
 
       btnNo.addEventListener('touchstart', function (e) {
+        if (noIsYes) return;
         e.preventDefault();
         moveNoButton();
       }, { passive: false });
 
       window.addEventListener('resize', function () {
-        if (isDodging) {
+        if (isDodging && !noIsYes) {
           var pos = randomPosition();
           btnNo.style.left = pos.left + 'px';
           btnNo.style.top = pos.top + 'px';
